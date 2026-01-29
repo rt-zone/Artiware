@@ -1,4 +1,5 @@
 from machine import Pin
+from time import sleep_ms
 
 _DIR_CW = const(0x10)  # Clockwise step
 _DIR_CCW = const(0x20)  # Counter-clockwise step
@@ -60,6 +61,14 @@ def _trigger(rotary_instance):
     for listener in rotary_instance._listener:
         listener()
 
+def _irq_supported():
+    try:
+        p = Pin(20, Pin.IN)
+        p.irq(lambda pin: None, Pin.IRQ_FALLING)
+        return True
+    except:
+        return False
+
 
 class RotaryEncoder(object):
 
@@ -95,6 +104,7 @@ class RotaryEncoder(object):
         self._listener = []
         self._direction = 0
         self._old_value = 0
+        self._simulate_mode = not _irq_supported()
         
         
         if pull_up:
@@ -103,13 +113,18 @@ class RotaryEncoder(object):
         else:
             self._pin_clk = Pin(self._clk_pin, Pin.IN)
             self._pin_dt = Pin(self._dt_pin, Pin.IN)
+
         self._hal_enable_irq()
 
     def _hal_enable_irq(self):
+        if self._simulate_mode:
+            return
         self._pin_clk.irq(self._process_rotary_pins, IRQ_RISING_FALLING)
         self._pin_dt.irq(self._process_rotary_pins, IRQ_RISING_FALLING)
 
     def _hal_disable_irq(self):
+        if self._simulate_mode:
+            return
         self._pin_clk.irq(None, 0)
         self._pin_dt.irq(None, 0)  
 
@@ -193,8 +208,15 @@ class RotaryEncoder(object):
 
     def value(self):
         """Returns current value of encoder"""
+        if self._simulate_mode:
+            sleep_ms(2)
+            self._process_rotary_pins(None)
         return self._value
-
+    
+    def read(self):
+        """Alias for self.value(), returns current value of encoder."""
+        return self.value()
+    
     def old_value(self):
         return self._old_value
 
