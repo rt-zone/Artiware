@@ -104,6 +104,7 @@ class RotaryEncoder(object):
         self._listener = []
         self._direction = 0
         self._old_value = 0
+        # TODO: Change the way how we detect whether this file is launched in hardware or simulation
         self._simulate_mode = not _irq_supported()
         
         
