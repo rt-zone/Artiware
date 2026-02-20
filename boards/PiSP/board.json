@@ -1,0 +1,9 @@
+{
+    "board": "PiSP",
+    "mcu":"rp2040",
+    "product":"PiSP Beta",
+    "vendor":"MiniCo",
+    "variants" : {
+        "FLASH_16M" : "16 MiB Flash"
+    }
+}
