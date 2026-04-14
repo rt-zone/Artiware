@@ -7,3 +7,5 @@ require("aioble")
 
 # Custom frozen files
 freeze("./modules")
+
+freeze("../_Extensions")
