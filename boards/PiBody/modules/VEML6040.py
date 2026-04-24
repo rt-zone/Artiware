@@ -17,16 +17,19 @@ _G_SENSITIVITY = 0.25168    # lux/step
 _NaN=float('NaN')
 
 def rgb2hsv(r, g, b):
-    r = float(r/65535)
-    g = float(g/65535)
-    b = float(b/65535)
+    r = float(r/255)
+    g = float(g/255)
+    b = float(b/255)
     high = max(r, g, b)
     low = min(r, g, b)
     h,s,v = high,high,high
     d = high - low
     s = 0 if high == 0 else d/high
-    if high == low:
-        h = 0.0
+
+    if d < (40/255):
+        h = -1
+    elif high == g and d < (120/255):
+        h = -1
     else:
         h = {
             r: (g - b) / d+(6 if g < b else 0),
@@ -34,7 +37,8 @@ def rgb2hsv(r, g, b):
             b: (r - g) / d+4,
         }[high]
         h /= 6
-    return (h*360, s, v)
+        h *= 360
+    return (h, s, v)
 
 def hsv2rgb(h, s, v):
     """
@@ -127,17 +131,24 @@ class VEML6040(object):
         raw_g = round(rgb['green'] / 65535 * 255)
         raw_b = round(rgb['blue']  / 65535 * 255)
 
-        m11, m12, m13 = 11.2575 , -7.4708 , 0.2273
-        m21, m22, m23 = -0.4733 , 3.9696  , -1.9689
-        m31, m32, m33 = 1.4107  , -1.8697 , 4.5144
+        m11, m12, m13 = 6.3, -2.8, 0.0  # 11.2575, -7.4708, 0.2273
+        m21, m22, m23 = -0.5, 4.0, -0.5  # -0.4733, 3.9696, -1.9689
+        m31, m32, m33 = 0.4, -0.4, 3.5  # 1.4107, -1.8697, 4.5144
 
         r = m11*raw_r + m12*raw_g + m13*raw_b
         g = m21*raw_r + m22*raw_g + m23*raw_b
         b = m31*raw_r + m32*raw_g + m33*raw_b
 
-        r = max(0, min(round(r), 255))
-        g = max(0, min(round(g), 255))
-        b = max(0, min(round(b), 255))
+        mn = min(r, g, b)
+        if mn < 0:
+            r = r - mn
+            g = g - mn
+            b = b - mn
+
+        mx = max(r, g, b, 255)
+        r = max(0, min(round(r/mx*255), 255))
+        g = max(0, min(round(g/mx*255), 255))
+        b = max(0, min(round(b/mx*255), 255))
 
         return (r, g, b)
 
@@ -147,8 +158,18 @@ class VEML6040(object):
         return {'red': r, 'green': g, 'blue':b, 'hue': h, 'sat':s, 'val':v}
 
     # Detects the color out of list.
-    def detectColor(self, hues={"red":0,"yellow":60,"green":120,"light-blue":180,"blue":240,"magenta":300}, min_brightness=0.0009):
+    def detectColor(self, hues={"red":0,"yellow":60,"green":120,"light-blue":180,"blue":240,"magenta":300}, min_brightness=0.5):
         h, s, v = self.readHSV()
+        if h < 0:
+            rgbw = self.readRawData()
+            w = (rgbw["red"] + rgbw["green"] + rgbw["blue"] + rgbw["white"]) / 4
+        
+            if w > 62000:
+                return "white"
+            elif w > 8000:
+                return "gray"
+            else:
+                return "black"
         if v > min_brightness:
             key, val = min(hues.items(), key=lambda x: min(360-abs(h - x[1]),abs(h - x[1]))) # nearest neighbour, but it wraps!
             return key
