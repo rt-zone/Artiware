@@ -6,7 +6,7 @@
 
 // Enable networking.
 #define MICROPY_PY_NETWORK 1
-#define MICROPY_PY_NETWORK_HOSTNAME_DEFAULT     "PiBody Wireless"
+#define MICROPY_PY_NETWORK_HOSTNAME_DEFAULT     "Atlas"
 
 // CYW43 driver configuration.
 #define CYW43_USE_SPI (1)
@@ -24,4 +24,4 @@
 int mp_hal_is_pin_reserved(int n);
 #define MICROPY_HW_PIN_RESERVED(i) mp_hal_is_pin_reserved(i)
 
-#define MICROPY_BANNER_MACHINE "PiBody v1.0"
+#define MICROPY_BANNER_MACHINE "ATLAS v0.1"

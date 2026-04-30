@@ -159,6 +159,10 @@ st7789_rotation_t ORIENTATIONS_128x128[4] = {
     {0xa0, 128, 128, 3, 2}
 };
 
+static uint16_t color565(uint8_t r, uint8_t g, uint8_t b) {
+    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3);
+}
+
 static void write_spi(mp_obj_base_t *spi_obj, const uint8_t *buf, int len) {
     #ifdef MP_OBJ_TYPE_GET_SLOT
     mp_machine_spi_p_t *spi_p = (mp_machine_spi_p_t *)MP_OBJ_TYPE_GET_SLOT(spi_obj->type, protocol);
@@ -426,6 +430,32 @@ static mp_obj_t st7789_ST7789_fill(mp_obj_t self_in, mp_obj_t _color) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_2(st7789_ST7789_fill_obj, st7789_ST7789_fill);
 
+
+static mp_obj_t st7789_ST7789_clear(mp_obj_t self_in) {
+    st7789_ST7789_obj_t *self = MP_OBJ_TO_PTR(self_in);
+
+    set_window(self, 0, 0, self->width - 1, self->height - 1);
+    DC_HIGH();
+    CS_LOW();
+    fill_color_buffer(self->spi_obj, BLACK, self->width * self->height);
+    CS_HIGH();
+
+    return mp_const_none;
+}
+
+static MP_DEFINE_CONST_FUN_OBJ_1(st7789_ST7789_clear_obj, st7789_ST7789_clear);
+
+static mp_obj_t st7789_ST7789_color565(size_t n_args, const mp_obj_t *args) {
+    // args[0] is self (unused), args[1]=r, args[2]=g, args[3]=b
+    (void)args[0];
+    return MP_OBJ_NEW_SMALL_INT(color565(
+        (uint8_t)mp_obj_get_int(args[1]),
+        (uint8_t)mp_obj_get_int(args[2]),
+        (uint8_t)mp_obj_get_int(args[3])));
+}
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(st7789_ST7789_color565_obj, 4, 4, st7789_ST7789_color565);
+//                                                                        ^  ^
+//                                                              min_args  |  max_args (same = exactly 4)
 static mp_obj_t st7789_ST7789_pixel(size_t n_args, const mp_obj_t *args) {
     st7789_ST7789_obj_t *self = MP_OBJ_TO_PTR(args[0]);
     mp_int_t x = mp_obj_get_int(args[1]);
@@ -1445,9 +1475,6 @@ static mp_obj_t st7789_ST7789_offset(size_t n_args, const mp_obj_t *args) {
 }
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(st7789_ST7789_offset_obj, 3, 3, st7789_ST7789_offset);
 
-static uint16_t color565(uint8_t r, uint8_t g, uint8_t b) {
-    return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | ((b & 0xF8) >> 3);
-}
 
 static mp_obj_t st7789_color565(mp_obj_t r, mp_obj_t g, mp_obj_t b) {
     return MP_OBJ_NEW_SMALL_INT(color565(
@@ -2365,6 +2392,7 @@ static const mp_rom_map_elem_t st7789_ST7789_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_set_window), MP_ROM_PTR(&st7789_ST7789_set_window_obj)},
     {MP_ROM_QSTR(MP_QSTR_fill_rect), MP_ROM_PTR(&st7789_ST7789_fill_rect_obj)},
     {MP_ROM_QSTR(MP_QSTR_fill), MP_ROM_PTR(&st7789_ST7789_fill_obj)},
+    {MP_ROM_QSTR(MP_QSTR_clear), MP_ROM_PTR(&st7789_ST7789_clear_obj)},
     {MP_ROM_QSTR(MP_QSTR_hline), MP_ROM_PTR(&st7789_ST7789_hline_obj)},
     {MP_ROM_QSTR(MP_QSTR_vline), MP_ROM_PTR(&st7789_ST7789_vline_obj)},
     {MP_ROM_QSTR(MP_QSTR_fill_circle), MP_ROM_PTR(&st7789_ST7789_fill_circle_obj)},
@@ -2385,6 +2413,15 @@ static const mp_rom_map_elem_t st7789_ST7789_locals_dict_table[] = {
     {MP_ROM_QSTR(MP_QSTR_polygon), MP_ROM_PTR(&st7789_ST7789_polygon_obj)},
     {MP_ROM_QSTR(MP_QSTR_fill_polygon), MP_ROM_PTR(&st7789_ST7789_fill_polygon_obj)},
     {MP_ROM_QSTR(MP_QSTR_bounding), MP_ROM_PTR(&st7789_ST7789_bounding_obj)},
+    {MP_ROM_QSTR(MP_QSTR_color), MP_ROM_PTR(&st7789_ST7789_color565_obj)},
+    {MP_ROM_QSTR(MP_QSTR_BLACK), MP_ROM_INT(BLACK)},
+    {MP_ROM_QSTR(MP_QSTR_BLUE), MP_ROM_INT(BLUE)},
+    {MP_ROM_QSTR(MP_QSTR_RED), MP_ROM_INT(RED)},
+    {MP_ROM_QSTR(MP_QSTR_GREEN), MP_ROM_INT(GREEN)},
+    {MP_ROM_QSTR(MP_QSTR_CYAN), MP_ROM_INT(CYAN)},
+    {MP_ROM_QSTR(MP_QSTR_MAGENTA), MP_ROM_INT(MAGENTA)},
+    {MP_ROM_QSTR(MP_QSTR_YELLOW), MP_ROM_INT(YELLOW)},
+    {MP_ROM_QSTR(MP_QSTR_WHITE), MP_ROM_INT(WHITE)}
 };
 static MP_DEFINE_CONST_DICT(st7789_ST7789_locals_dict, st7789_ST7789_locals_dict_table);
 /* methods end */
@@ -2536,7 +2573,7 @@ mp_obj_t st7789_ST7789_make_new(const mp_obj_type_t *type,
 
 static const mp_map_elem_t st7789_module_globals_table[] = {
     {MP_ROM_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_st7789)},
-    {MP_ROM_QSTR(MP_QSTR_color565), (mp_obj_t)&st7789_color565_obj},
+    {MP_ROM_QSTR(MP_QSTR_color), (mp_obj_t)&st7789_color565_obj},
     {MP_ROM_QSTR(MP_QSTR_map_bitarray_to_rgb565), (mp_obj_t)&st7789_map_bitarray_to_rgb565_obj},
     {MP_ROM_QSTR(MP_QSTR_ST7789), (mp_obj_t)&st7789_ST7789_type},
     {MP_ROM_QSTR(MP_QSTR_BLACK), MP_ROM_INT(BLACK)},
