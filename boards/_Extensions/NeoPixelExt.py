@@ -21,6 +21,10 @@ class NeoPixel(NP):
         super().__init__(Pin(pin), led_num)
         self.fill(self.BLACK)
         self.write()
+    
+    def __call__(self, color):
+        self.fill(color)
+        self.write()
 
 
     

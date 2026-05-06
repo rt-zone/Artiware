@@ -1,4 +1,4 @@
-from Extensions.ADCExt import ADC 
+from ADCExt import ADC 
 from machine import Pin
 
 MODULE_NAME = "Joystick"

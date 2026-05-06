@@ -1,4 +1,4 @@
-from Extensions.PWMExt import PWM
+from PWMExt import PWM
 
 MODULE_NAME = "Servo"
 SERVO_PERIOD_MS = 20
@@ -15,14 +15,16 @@ class Servo:
         self.servo.freq(1000//SERVO_PERIOD_MS)
         self._angle = None
 
+    def __call__(self, angle=None):
+        return self.angle(angle)
 
     def angle(self, angle=None):
         if angle is None:
             return self._angle
-        else:
-            self._angle = angle
-            duty = angle2duty(angle)
-            self.servo.duty(duty)
+        
+        self._angle = angle
+        duty = angle2duty(angle)
+        self.servo.duty(duty)
 
     def on(self):
         self.servo.init()

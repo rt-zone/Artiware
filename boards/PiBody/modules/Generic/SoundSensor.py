@@ -1,5 +1,5 @@
-from Extensions.ADCExt import ADC
-from Extensions.PinExt import Pin
+from ADCExt import ADC
+from PinExt import Pin
 
 # TODO: Add either read_u16() to analog pin, or expose analog pin altogether
 # TODO: Add methods to record voice and play them. Consider adding these methods to a buzzer

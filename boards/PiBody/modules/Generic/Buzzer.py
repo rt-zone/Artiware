@@ -1,6 +1,6 @@
 from time import sleep
 
-from Extensions.PWMExt import PWM
+from PWMExt import PWM
 
 MODULE_NAME = "BUZZER"
 
@@ -10,6 +10,9 @@ class Buzzer(PWM):
         self._volume = volume
         self.freq(freq)
         self._is_muted = False
+
+    def __call__(self, freq=440, volume=1, duration=0.1):
+        self.make_sound(freq, volume, duration)
 
     def volume(self, volume=None):
         if volume is None:
